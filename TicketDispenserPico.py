@@ -57,7 +57,7 @@ class TicketDispenserPico(object):
             # time.sleep(0.03)
             data_left = self.ser.inWaiting()
             ticketDispenserStatus += self.ser.read(data_left)
-            # print(ticketDispenserStatus)
+            print(ticketDispenserStatus)
         except:
             pass
         return ticketDispenserStatus

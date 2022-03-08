@@ -1,7 +1,7 @@
 #!/bin/sh
 #launcher.sh
 #navigate to home directory, then to this directory, then execute python script, then back home
-log="/home/pi/Autopark2020_Exit/logs/$(date +%Y-%m-%d)_launch.log"
+log="/home/pi/AutoPark2020_Exit/logs/$(date +%Y-%m-%d)_launch.log"
 echo $(date): Starting launcher.sh | tee -a "$log"
 
 cd /

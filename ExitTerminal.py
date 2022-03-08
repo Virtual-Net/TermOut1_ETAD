@@ -29,7 +29,7 @@ from evdev import InputDevice, categorize  # import * is evil :)
 TIMEOUT = 0.1
 messageflag = False
 enabledispenser = False
-IP_PORT = 7000
+IP_PORT = 7001
 HOSTNAME = ""
 
 
@@ -41,7 +41,7 @@ class GuiPart:
         #try:
         self.GUI = Tk()
         self.master2 = master
-        # self.GUI.attributes('-fullscreen', True)
+        self.GUI.attributes('-fullscreen', True)
         self.GUI.config(bg="black")
 
         self.F1 = Frame(self.GUI)
@@ -691,22 +691,22 @@ class ThreadedClient:
             loopstate = self.loopinfo.readloopstate()
             time.sleep(0.2)
             if loopstate == 1  or self.looptimer < self.looptimerset:
-                logger.info('loop was activated')
+                print('loop was activated')
                 self.ticketdispenser_.getTicketDispenserStatus()
                 time.sleep(0.3)
                 ticketdispenserrespcmd = self.ticketdispenser_.readTicketDispenserResponse()
                 logger.info(ticketdispenserrespcmd)
                 if ticketdispenserrespcmd == b'\x00\x01':
-                    logger.info('ticket @ front')
-                    if self.ticket_at_front == False:
-                        self.ticketdispenser_.intaketochipcmd()
-                        self.ticket_at_front = True
-                        self.ticket_in = True
-                        self.barcodeResult = ""
+                    print('ticket @ front')
+                    #if self.ticket_at_front == False:
+                    self.ticketdispenser_.intaketochipcmd()
+                    self.ticket_at_front = True
+                    self.ticket_in = True
+                    self.barcodeResult = ""
                 elif ticketdispenserrespcmd == b'\x00\x00':
                     self.ticket_at_front = False
                     self.barcodeResult = ""
-                    logger.info('no ticket present')
+                    print('no ticket present')
                 elif ticketdispenserrespcmd == b'\x00\x06' and self.barcodeResult == "":
                     self.ticketdispenser_.readPosition3TicketDispenserCmd()
                 elif ticketdispenserrespcmd == b'\x00\x02' and self.barcodeResult == "":
@@ -752,16 +752,16 @@ class ThreadedClient:
         self.queuechk.put(1)
         while self.running:
             DevicesList = open('/proc/bus/input/devices').readlines()
-            if 'GD32icroelectronics GD32 Custm HID' in DevicesList[1]:
+            if 'Newland Auto-ID DM21' in DevicesList[1]:
                 device_event_number = DevicesList[5].split('event',1)[1]
                 dev = InputDevice('/dev/input/event' + device_event_number.strip())
-            elif 'GD32icroelectronics GD32 Custm HID' in DevicesList[13]:
+            elif 'Newland Auto-ID DM21' in DevicesList[13]:
                 device_event_number = DevicesList[17].split('event',1)[1]
                 dev = InputDevice('/dev/input/event' + device_event_number.strip())
-            elif 'GD32icroelectronics GD32 Custm HID' in DevicesList[25]:
+            elif 'Newland Auto-ID DM21' in DevicesList[25]:
                 device_event_number = DevicesList[29].split('event',1)[1]
                 dev = InputDevice('/dev/input/event' + device_event_number.strip())
-            elif 'GD32icroelectronics GD32 Custm HID' in DevicesList[37]:
+            elif 'Newland Auto-ID DM21' in DevicesList[37]:
                 device_event_number = DevicesList[41].split('event',1)[1]
                 dev = InputDevice('/dev/input/event' + device_event_number.strip())
             # dev = InputDevice('/dev/input/event1')
@@ -781,11 +781,11 @@ class ThreadedClient:
                    data = evdev.categorize(event)  # Save the event temporarily to introspect it
                    if data.keystate == 1:  # Down events only
                        key_lookup = scancodes.get(data.scancode) or u'UNKNOWN:{}'.format(data.scancode)  # Lookup or return UNKNOWN:XX
-                       # print (key_lookup)  # Print it all out!
+                       print (key_lookup)  # Print it all out!
                        self.barcodeResult += key_lookup
-                logger.info('BARCODE DATA: ') # + str(self.barcodeResult))
-                logger.info(self.barcodeResult)
-                if len(self.barcodeResult) >= 13 and self.ticket_in == True:
+                print('BARCODE DATA: ') # + str(self.barcodeResult))
+                print(self.barcodeResult)
+                if len(self.barcodeResult) >= 9:
                     self.barcodeResult = self.barcodeResult[:9]
                     try:
                         resp, cont, head = self.httpreq.sendticketexit(self.barcodeResult)
@@ -815,6 +815,15 @@ class ThreadedClient:
                             self.ticketdispenser_.returnticketcmd()
                         self.httpreq.receive_ticket_exit(resp)
                         self.barcodeResult = ""
+                        try:
+                            if self.msg != msg_screen:
+                                self.msg = msg_screen
+                                self.queue.put(msg_screen)
+                                self.queuechk.put(msg_screen)
+                                #print(self.queue.get(0))
+                                #print(msg_screen)
+                        except:
+                            logger.info('no msg on RFID Thread')
                     except:
                         logger.info("BARCODE HTTP EXCEPTION")
                 elif len(self.barcodeResult) == 0 :
@@ -907,18 +916,18 @@ class ThreadedClient:
             barcode = '0'
             time.sleep(0.2)
             if loopstate == 1 or self.looptimer < self.looptimerset:
-                logger.info('loop was activated')
+                print('loop was activated')
                 self.machinestate = 1
                 for event in dev.read_loop():
                     if event.type == evdev.ecodes.EV_KEY:
                        data = evdev.categorize(event)  # Save the event temporarily to introspect it
                        if data.keystate == 1:  # Down events only
                            key_lookup = scancodes.get(data.scancode) or u'UNKNOWN:{}'.format(data.scancode)  # Lookup or return UNKNOWN:XX
-                           # print (key_lookup)  # Print it all out!
+                           print (key_lookup)  # Print it all out!
                            self.qrcodeResult += key_lookup
-                    logger.info('QRCODE DATA: ') # + str(self.qrcodeResult))
-                    logger.info(self.qrcodeResult)
-                    if len(self.qrcodeResult) >= 13:
+                    print('QRCODE DATA: ') # + str(self.qrcodeResult))
+                    print(self.qrcodeResult)
+                    if len(self.qrcodeResult) > 9:
                         self.qrcodeResult = self.qrcodeResult[:9]
                         try:
                             resp, cont, head = self.httpreq.sendticketexit(self.qrcodeResult)
@@ -942,16 +951,28 @@ class ThreadedClient:
                                 # self.ticket_in = False
                             elif msg_screen == 201 or msg_screen == 200:
                                 self.qrcodeResult = ""
+                            elif msg_screen == 404:
+                                self.qrcodeResult = ""
                             else:
                                 # self.barcodeResult = ""
                                 pass
                             self.httpreq.receive_ticket_exit(resp)
                             # time.sleep(0.5)
+                            try:
+                                if self.msg != msg_screen:
+                                    self.msg = msg_screen
+                                    self.queue.put(msg_screen)
+                                    self.queuechk.put(msg_screen)
+                                    #print(self.queue.get(0))
+                                    #print(msg_screen)
+                            except:
+                                logger.info('no msg on RFID Thread')
                         except:
                             logger.info("QRCODE HTTP EXCEPTION")
                     elif len(self.qrcodeResult) == 0 :
                         self.qrcodeResult = ""
             elif loopstate == 0:
+                self.qrcodeResult = ""
                 if self.enabledispenser == False:
                     self.enabledispenser = True
                 if self.messageflag == True:

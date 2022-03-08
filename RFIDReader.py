@@ -39,12 +39,12 @@ class RFIDReader(object):
         try:
             pn532 = PN532_UART(debug=False, reset=20)
             ic, ver, rev, support = pn532.get_firmware_version()
-            logger.info('Found PN532 with firmware version: {0}.{1}'.format(ver, rev))
+            print('Found PN532 with firmware version: {0}.{1}'.format(ver, rev))
             
             # Configure PN532 to communicate with MiFare cards
             pn532.SAM_configuration()
     
-            logger.info('Waiting for RFID/NFC card...')
+            print('Waiting for RFID/NFC card...')
             # Check if a card is available to read
             uid = pn532.read_passive_target(timeout=0.5)
             #print('.', end="")
@@ -52,7 +52,7 @@ class RFIDReader(object):
             if uid is None:
                 return
             else:
-                logger.info('Found card with UID:', [hex(i) for i in uid])
+                print('Found card with UID:', [hex(i) for i in uid])
                 logger.info(uid)
                 uid_ = uid.hex()
                 logger.info(uid_)
